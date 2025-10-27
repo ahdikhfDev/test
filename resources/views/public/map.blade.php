@@ -204,174 +204,110 @@
     </div>
 
     <script>
-        function mapApp() {
-            return {
-                map: null,
-                markers: [],
-                allUsahas: [],
-                filteredUsahas: [],
-                selectedUsaha: null,
-                loading: true,
-                filters: {
-                    search: '',
-                    kategori_id: '',
-                    kelurahan_id: ''
-                },
+    function mapApp() {
+        return {
+            map: null,
+            markers: [],
+            allUsahas: [],
+            filteredUsahas: [],
+            selectedUsaha: null,
+            loading: true,
+            filters: {
+                search: '',
+                kategori_id: '',
+                kelurahan_id: ''
+            },
 
-                init() {
-                    this.initMap();
-                    this.filterUsahas();
-                },
-
-                initMap() {
-                    this.map = L.map('map', { zoomControl: false }).setView([-6.2088, 106.8456], 12);
-                    L.control.zoom({ position: 'bottomright' }).addTo(this.map);
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                        subdomains: 'abcd',
-                        maxZoom: 20
-                    }).addTo(this.map);
-                },
-
-                addMarkers() {
-                    this.markers.forEach(marker => marker.remove());
-                    this.markers = [];
-
-                    const iconSvg = `
-                        <svg viewBox="0 0 32 46" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));">
-                            <path d="M16 0C7.163 0 0 7.163 0 16C0 28 16 46 16 46C16 46 32 28 32 16C32 7.163 24.837 0 16 0Z" fill="{color}"/>
-                            <circle cx="16" cy="16" r="7" fill="white"/>
-                        </svg>
-                    `;
-
-                    this.filteredUsahas.forEach(usaha => {
-                        const color = this.getMarkerColor(usaha.kategori.color);
-                        const customIconHtml = iconSvg.replace('{color}', color);
-                        
-                        const icon = L.divIcon({
-                            className: 'custom-div-icon',
-                            html: customIconHtml,
-                            iconSize: [32, 46],
-                            iconAnchor: [16, 46],
-                            popupAnchor: [0, -50]
-                        });
-                        
-                        const marker = L.marker([usaha.latitude, usaha.longitude], { icon })
-                            .addTo(this.map)
-                            .bindPopup(`
-                                <div>
-                                    <div class="relative">
-                                        <img src="https://source.unsplash.com/random/320x160?sig=${usaha.id}" class="w-full h-40 object-cover" alt="Foto ${usaha.nama}">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                        <div class="absolute bottom-3 left-4">
-                                             <span class="px-2.5 py-1 text-xs font-bold rounded-full" style="background-color: ${color}E6; color: white">${usaha.kategori.nama}</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-5">
-                                        <h4 class="font-extrabold text-xl mb-1 text-gray-900">${usaha.nama}</h4>
-                                        <p class="text-sm text-gray-600 mb-4 line-clamp-2">${usaha.alamat}</p>
-                                        <div class="border-t pt-4 space-y-2.5 text-sm text-gray-700">
-                                            <div class="flex items-center gap-3">
-                                                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                                <span>${usaha.kelurahan.nama}</span>
-                                            </div>
-                                            ${usaha.telepon ? `
-                                            <div class="flex items-center gap-3">
-                                                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                                <span>${usaha.telepon}</span>
-                                            </div>` : ''}
-                                        </div>
-                                        <div class="flex gap-3 mt-5">
-                                            <a href="/usaha/${usaha.slug}" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                Lihat Detail
-                                            </a>
-                                            <a href="${usaha.google_maps_url}" target="_blank" class="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                                                Arahkan
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            `);
-
-                        marker.on('click', () => {
-                            this.selectedUsaha = usaha;
-                            this.map.flyTo([usaha.latitude, usaha.longitude], 17);
-                        });
-
-                        this.markers.push(marker);
-                    });
-                    
-                    if (this.markers.length > 0 && !this.filters.search && !this.filters.kategori_id && !this.filters.kelurahan_id) {
-                         const group = L.featureGroup(this.markers);
-                         this.map.flyToBounds(group.getBounds().pad(0.2), { duration: 1 });
-                    }
-                },
-
-                async filterUsahas() {
-                    this.loading = true;
-                    this.selectedUsaha = null;
-                    
-                    try {
-                        const params = new URLSearchParams();
-                        if (this.filters.search) params.append('search', this.filters.search);
-                        if (this.filters.kategori_id) params.append('kategori_id', this.filters.kategori_id);
-                        if (this.filters.kelurahan_id) params.append('kelurahan_id', this.filters.kelurahan_id);
-                        
-                        await new Promise(res => setTimeout(res, 500));
-
-                        // [DIKEMBALIKAN] Mengambil data dari API asli Anda
-                        const response = await fetch(`/api/usahas?${params}`);
-                        const result = await response.json();
-                        this.filteredUsahas = result.data;
-                        
-                        this.addMarkers();
-                    } catch (error) {
-                        console.error('Error filtering usahas:', error);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                focusUsaha(usaha) {
-                    this.selectedUsaha = usaha;
-                    this.map.flyTo([usaha.latitude, usaha.longitude], 17, {
-                        animate: true,
-                        duration: 1
-                    });
-                    
-                    this.markers.forEach(marker => {
-                        const latlng = marker.getLatLng();
-                        if (latlng.lat === usaha.latitude && latlng.lng === usaha.longitude) {
-                            marker.openPopup();
-                        }
-                    });
-                },
-
-                resetFilters() {
-                    this.filters = {
-                        search: '',
-                        kategori_id: '',
-                        kelurahan_id: ''
-                    };
-                    this.filterUsahas();
-                },
-
-                getKategoriColor(color) {
-                    const colors = {
-                        'blue': '#3b82f6', 'red': '#ef4444', 'green': '#10b981',
-                        'yellow': '#f59e0b', 'purple': '#8b5cf6', 'pink': '#ec4899',
-                        'indigo': '#6366f1', 'gray': '#6b7280'
-                    };
-                    return colors[color] || colors['blue'];
-                },
-
-                getMarkerColor(color) {
-                    return this.getKategoriColor(color);
+            async init() {
+                // Hapus map lama kalau sudah ada
+                if (window.myMap) {
+                    window.myMap.remove();
                 }
+
+                this.initMap();
+                window.myMap = this.map;
+                await this.filterUsahas();
+            },
+
+            initMap() {
+                this.map = L.map('map', { zoomControl: false }).setView([-6.2088, 106.8456], 12);
+                L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(this.map);
+            },
+
+            addMarkers() {
+                this.markers.forEach(m => m.remove());
+                this.markers = [];
+
+                this.filteredUsahas.forEach(usaha => {
+                    const icon = L.divIcon({
+                        html: `<svg viewBox="0 0 32 46" fill="${this.getKategoriColor(usaha.kategori.color)}" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16 0C7.163 0 0 7.163 0 16C0 28 16 46 16 46C16 46 32 28 32 16C32 7.163 24.837 0 16 0Z"/>
+                                <circle cx="16" cy="16" r="7" fill="white"/>
+                            </svg>`,
+                        className: 'custom-div-icon',
+                        iconSize: [32, 46],
+                        iconAnchor: [16, 46],
+                    });
+
+                    const marker = L.marker([usaha.latitude, usaha.longitude], { icon })
+                        .addTo(this.map)
+                        .bindPopup(`<b>${usaha.nama}</b><br>${usaha.alamat}`);
+
+                    marker.on('click', () => {
+                        this.selectedUsaha = usaha;
+                        this.map.flyTo([usaha.latitude, usaha.longitude], 17);
+                    });
+
+                    this.markers.push(marker);
+                });
+            },
+
+            async filterUsahas() {
+                this.loading = true;
+                this.selectedUsaha = null;
+
+                try {
+                    const params = new URLSearchParams();
+                    if (this.filters.search) params.append('search', this.filters.search);
+                    if (this.filters.kategori_id) params.append('kategori_id', this.filters.kategori_id);
+                    if (this.filters.kelurahan_id) params.append('kelurahan_id', this.filters.kelurahan_id);
+
+                    const response = await fetch(`/api/usahas?${params}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    this.filteredUsahas = result.data || [];
+                    this.addMarkers();
+                } catch (error) {
+                    console.error("Error filtering usahas:", error);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            resetFilters() {
+                this.filters = { search: '', kategori_id: '', kelurahan_id: '' };
+                this.filterUsahas();
+            },
+
+            getKategoriColor(color) {
+                const colors = {
+                    'blue': '#3b82f6', 'red': '#ef4444', 'green': '#10b981',
+                    'yellow': '#f59e0b', 'purple': '#8b5cf6', 'pink': '#ec4899',
+                    'indigo': '#6366f1', 'gray': '#6b7280'
+                };
+                return colors[color] || '#3b82f6';
             }
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
